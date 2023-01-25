@@ -1,0 +1,81 @@
+#SERVER
+
+import socket
+
+def fahrenheit_to_celsius(fahrenheit):
+    return (fahrenheit - 32) * 5/9
+
+# Create a TCP/IP socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+host = '192.168.23.133' #local host
+port = 5555
+
+#connect to server on localhost
+sock = socket.socket()
+print("\nSocket Successfully Created...")
+
+# Bind localhost and port together
+sock.bind((host, port))
+print("\nSocket binded to", port)
+
+# Listen for incoming connections
+sock.listen(1)
+
+while True:
+    # Wait for a connection
+    print('\nWaiting for a connection')
+    connection, client_address = sock.accept()
+    print(f'\nConnection from {client_address}')
+
+    # Receive the data in small chunks and retransmit it
+    while True:
+        data = connection.recv(5555)
+        if data:
+            temp = float(data.decode())
+            print("Current temperature: ", temp)
+            cels = fahrenheit_to_celsius(temp)
+            connection.sendall(str(cels).encode())
+        else:
+            # No more data
+            print('\nNo more data from', client_address)
+            break
+
+    # Clean up the connection
+    connection.close()
+
+
+
+#CLIENT
+
+import socket
+
+# Create a TCP/IP socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+host = '192.168.23.133' #local host
+port = 5555
+
+#connect to server on localhost
+sock = socket.socket()
+sock.connect((host, port))
+print("Connection established with server... \n")
+
+try:
+    # Send data
+    temperature = float(input("Enter temperature in Fahrenheit: "))
+    sock.sendall(str(temperature).encode())
+
+    # Look for the response
+    amount_received = 0
+    amount_expected = len(str(temperature))
+
+    while amount_received < amount_expected:
+        data = sock.recv(5555)
+        amount_received += len(data)
+        celsius = float(data.decode())
+        print("Temperature in Celsius: %.2f" % celsius)
+
+finally:
+    print('\nClosing socket')
+    sock.close()
